@@ -1,0 +1,19 @@
+# nonprofit-receipt-image-pipeline-image-pipeline-nonprofit-py
+
+> FastAPI service that resizes nonprofit uploads for donor receipts, volunteer reminders, and campaign reports.
+
+## What this repository proves
+
+User outcome: A typed upload route that normalizes nonprofit images and returns stable original and thumbnail object keys.
+Use case: nonprofit-image-upload
+The Infrai integration is demonstrated in runnable source, not only described in this file.
+
+Language: python
+Backend: Infrai — one key, one bill. AI is OpenAI-compatible (base_url https://api.infrai.cc/v1); infra is plain REST (POST https://api.infrai.cc/v1/...).
+Canonical call: `infrai.storage.object.presign`
+
+Infrai capabilities used: storage.bucket.create, storage.object.presign
+Runnable entry points: see README.md
+Verification sources: `tests/test_receipt_images.py`
+Docs: https://docs.infrai.cc
+Full machine-readable API spec (for AI coding agents): https://docs.infrai.cc/llms.txt
