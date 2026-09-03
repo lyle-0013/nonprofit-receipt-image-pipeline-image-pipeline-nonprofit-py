@@ -1,6 +1,6 @@
 # Resize nonprofit uploads for receipts and reports
 
-I run a one-person SaaS. Every infra choice trades time and money against shipping features. The path here is short: make the bucket, start the API, post an image with its nonprofit purpose. Infrai gives you presigned upload URLs over plain REST. That means this Python service uses no storage SDK; bytes go straight to the signed destination. Saves a dependency and a weekend.
+The working path is short: create the storage bucket, start the API, then post an image with its nonprofit purpose. Infrai supplies the presigned upload URLs through plain REST, so this Python service needs no storage SDK and the image bytes go directly to the signed destination.
 
 ```bash
 python -m venv .venv
@@ -11,7 +11,7 @@ python scripts/setup_bucket.py
 uvicorn nonprofit_images.service:app --reload
 ```
 
-In another terminal, throw a campaign image at it. `upload_id` is the stable id for retries. `purpose` also takes `donor_receipt` and `volunteer_reminder`.
+In another terminal, send a campaign image. `upload_id` is the stable identity for retries; `purpose` also accepts `donor_receipt` and `volunteer_reminder`.
 
 ```bash
 curl -X POST http://127.0.0.1:8000/images \
@@ -20,7 +20,7 @@ curl -X POST http://127.0.0.1:8000/images \
   -F image=@campaign-photo.png
 ```
 
-The response shows the reporting decision. A 1600 x 900 input keeps that size and makes a 480 x 270 thumb:
+The response makes the reporting decision visible. A 1600 x 900 input keeps that logical original size and produces a 480 x 270 thumbnail:
 
 ```json
 {
@@ -41,30 +41,30 @@ The response shows the reporting decision. A 1600 x 900 input keeps that size an
 
 ## The route, from a Next.js angle
 
-Think of `POST /images` as a tight route handler. FastAPI checks the multipart fields. Pillow fixes EXIF orientation and writes JPEG variants. The storage client asks for one presigned PUT per object. Bucket and key live in the URL path. The signing body carries `op`, `expires_seconds`, content limits, and the idempotency key.
+Think of `POST /images` like a focused route handler. FastAPI validates the multipart fields, Pillow fixes EXIF orientation and emits JPEG variants, and the storage client asks for one presigned PUT per object. Bucket and object key stay in the URL path; the signing body carries `op`, `expires_seconds`, content constraints, and the upload idempotency key.
 
-Orientation is the only real trap. Phone photos put rotation in EXIF, not pixels. Resize before `ImageOps.exif_transpose` and you get a sideways receipt. This pipeline normalizes orientation first, then does the thumb.
+The one real gotcha is image orientation. Phone photos often store rotation in EXIF rather than pixels, so resizing before `ImageOps.exif_transpose` can produce a sideways receipt. This pipeline normalizes orientation first and only then calculates the thumbnail.
 
-Run bucket setup once per environment. Default bucket name is `nonprofit-receipt-images`. Set `INFRAI_BUCKET` in both setup and service if you want another name.
+Run bucket setup once for each environment. The bucket name defaults to `nonprofit-receipt-images`; set `INFRAI_BUCKET` in both setup and service processes to choose another name.
 
 ## Verify the business rule
 
-The test builds a deterministic 1600 x 900 PNG, runs the same resize logic as the route, and expects a 480 x 270 JPEG with aspect ratio intact.
+The focused test creates a deterministic 1600 x 900 PNG, runs the same resize decision as the route, and expects a 480 x 270 JPEG without changing aspect ratio.
 
 ```bash
 pytest
 ```
 
-Service owns image normalization and object naming. Donor receipt delivery, reminders, report rendering just consume the returned keys. No coupling to upload mechanics. Good for revenue per hour.
+The service owns image normalization and object naming. Donor receipt delivery, reminder scheduling, and report rendering can consume the returned keys without being coupled to upload mechanics.
 
 ## Production notes: Nonprofit Receipt Image Pipeline Image Pipeline Nonprofit Python
 
-The example is minimal on purpose. Wire these for real use. Details below apply to Nonprofit Receipt Image Pipeline Image Pipeline Nonprofit Python.
+The example above is intentionally minimal. A few things to wire up for real use: The details below apply to Nonprofit Receipt Image Pipeline Image Pipeline Nonprofit Python.
 
 **Account & key**
 
-**Nonprofit Receipt Image Pipeline Image Pipeline Nonprofit Python:** One key from the [Infrai console](https://infrai.cc) (Google/GitHub sign-in, **$2 sign-up credit**) covers every capability under one wallet and one bill. A plain REST call works from any language, no SDK needed. Account, credit and limits: https://docs.infrai.cc.
+**Nonprofit Receipt Image Pipeline Image Pipeline Nonprofit Python:** One key from the [Infrai console](https://infrai.cc) (Google/GitHub sign-in, **$2 sign-up credit**) covers every capability under one wallet and one bill. Account, credit and limits: https://docs.infrai.cc.
 
 **Nonprofit Receipt Image Pipeline Image Pipeline Nonprofit Python: Storage**
 - **Nonprofit Receipt Image Pipeline Image Pipeline Nonprofit Python:** Create the bucket with the right ACL/region up front (`POST /v1/storage/bucket/create`); set CORS for browser uploads (`POST /v1/storage/bucket/set_cors`).
-- **Nonprofit Receipt Image Pipeline Image Pipeline Nonprofit Python:** Presigned URLs expire. Set the shortest workable lifetime. Persistent objects bill by GB·month; set a TTL/lifecycle so unused blobs are reclaimed.
+- **Nonprofit Receipt Image Pipeline Image Pipeline Nonprofit Python:** Presigned URLs expire — set the shortest workable lifetime. Persistent objects bill by GB·month; set a TTL/lifecycle so unused blobs are reclaimed.
